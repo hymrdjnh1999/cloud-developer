@@ -13,7 +13,7 @@ plugins:
 provider:
   name: aws
   runtime: nodejs14.x
-  lambdaHashingVersion: '20201221'
+  lambdaHashingVersion: '20230518'
 
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
@@ -216,8 +216,6 @@ resources:
                 - HEAD
               MaxAge: 300
 
-    # TODO: Complete the policy below and attach it to the bucket defined above
-    # For cross referencing the name of the bucket, use "!Ref AttachmentsBucket"
     BucketPolicy:
       Type: AWS::S3::BucketPolicy
       Properties:
