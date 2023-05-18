@@ -5,16 +5,13 @@ import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 import { createLogger } from '../utils/logger'
 import * as uuid from 'uuid'
-// import * as createError from 'http-errors'
 
-// DONE_TODO: Implement businessLogic
 const todosAccess = new TodosAccess()
 const logger = createLogger('TodosLogic')
 const attachmentUtils = new AttachmentUtils()
 
-export async function getAllTodos(userId: string): Promise<TodoItem[]> {
-  logger.info('Getting all todos')
-  return todosAccess.getAllTodos(userId)
+export async function getTodoForUser(userId: string): Promise<TodoItem[]> {
+  return todosAccess.getTodoForUser(userId)
 }
 
 export async function createTodo(
