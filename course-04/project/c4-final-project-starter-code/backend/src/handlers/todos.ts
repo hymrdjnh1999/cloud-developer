@@ -10,8 +10,8 @@ const todosAccess = new TodosAccess()
 const logger = createLogger('TodosLogic')
 const attachmentUtils = new AttachmentUtils()
 
-export async function getTodoForUser(userId: string): Promise<TodoItem[]> {
-  return todosAccess.getTodoForUser(userId)
+export async function getTodos(userId: string): Promise<TodoItem[]> {
+  return todosAccess.getTodos(userId)
 }
 
 export async function createTodo(

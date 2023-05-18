@@ -15,7 +15,7 @@ export class TodosAccess {
     private readonly todosTable = process.env.TODOS_TABLE,
   ) {}
 
-  async getTodoForUser(userId: string): Promise<TodoItem[]> {
+  async getTodos(userId: string): Promise<TodoItem[]> {
     logger.info('Getting all todos')
 
     const result = await this.docClient
