@@ -53,15 +53,14 @@ export async function updateTodoNote(
   userId: string,
   todoId: string,
   note: string
-): Promise<void> {
+): Promise<any> {
   logger.info('Updating todo note')
   const item = await todosAccess.getTodoItem(todoId, userId)
   if (!item) throw new Error('Item not found')
   if (item.userId !== userId) {
     throw new Error('User not authorized to update item')
   }
-
-  return todosAccess.updateTodoNote(todoId, userId, note);
+  return todosAccess.updateTodoNote(todoId, userId, note)
 }
 
 export async function deleteTodo(

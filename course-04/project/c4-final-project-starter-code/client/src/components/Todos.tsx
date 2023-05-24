@@ -63,7 +63,9 @@ export const Todos = (props: TodosProps) => {
   const [hoverTodo, setHoverTodo] = useState<String | undefined>(undefined)
   const [todoObj, setTodoObj] = useState<any>({})
   const [updateObj, setUpdateObj] = useState<any>()
-  const [noteUpdate, setNoteUpdate] = useState<string | null>(null)
+  const [noteUpdate, setNoteUpdate] = useState<
+    { todoId: string; note: string } | undefined
+  >(undefined)
 
   useEffect(() => {
     if (!updateObj) return
@@ -74,7 +76,7 @@ export const Todos = (props: TodosProps) => {
   }, [updateObj])
 
   useEffect(() => {
-    if (noteUpdate == null) return
+    if (!noteUpdate || !noteUpdate?.todoId) return
     const timer = setTimeout(async () => {
       debounceUpdateTodoNote(noteUpdate)
     }, 1500)
@@ -82,13 +84,14 @@ export const Todos = (props: TodosProps) => {
   }, [noteUpdate])
 
   useEffect(() => {
-    if (state.todos?.length) {
-      const todoArrToObj = {} as any
-      state.todos.forEach((t) => {
-        todoArrToObj[t.todoId] = t
-      })
-      setTodoObj(todoArrToObj)
+    if (!state.todos?.length) {
+      return
     }
+    const todoArrToObj = {} as any
+    state.todos.forEach((t) => {
+      todoArrToObj[t.todoId] = t
+    })
+    setTodoObj(todoArrToObj)
   }, [state.todos])
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +107,8 @@ export const Todos = (props: TodosProps) => {
       const dueDate = calculateDueDate()
       const newTodo = await createTodo(props.auth.getIdToken(), {
         name: state.newTodoName,
-        dueDate
+        dueDate,
+        note: ''
       })
       setState({
         ...state,
@@ -209,7 +213,7 @@ export const Todos = (props: TodosProps) => {
     todo['note'] = value
     const newTodoObj = { ...todoObj, [id]: todo }
     setTodoObj(newTodoObj)
-    setNoteUpdate(value)
+    setNoteUpdate(todo)
   }
 
   const debounceUpdateTodo = useCallback(async (todo: any) => {

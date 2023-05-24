@@ -4,9 +4,14 @@
   "type": "object",
   "properties": {
     "name": {
-      "type": "string", "minLength": 3, "maxLength": 100
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 100
     },
     "dueDate": {
+      "type": "string"
+    },
+    "note": {
       "type": "string"
     }
   },

@@ -9,7 +9,7 @@ import { updateTodoNote } from '../../handlers/todos'
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     const todoId = event.pathParameters.todoId
-    const note = event.pathParameters.note
+    const { note } = JSON.parse(event.body)
     const userId = getUserId(event)
     try {
       await updateTodoNote(userId, todoId, note)

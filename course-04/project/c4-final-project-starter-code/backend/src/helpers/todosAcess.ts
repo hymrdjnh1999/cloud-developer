@@ -136,10 +136,10 @@ export class TodosAccess {
         todoId,
         userId
       },
-      UpdateExpression: 'set note=:note',
+      UpdateExpression: 'set note = :note',
       ExpressionAttributeValues: {
         ':note': note
       }
-    })
+    }).promise();
   }
 }
