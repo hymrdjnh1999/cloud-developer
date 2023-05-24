@@ -1,7 +1,7 @@
 import dateFormat from 'dateformat'
 import { History } from 'history'
 import update from 'immutability-helper'
-import * as React from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
   Button,
   Checkbox,
@@ -11,7 +11,8 @@ import {
   Icon,
   Input,
   Image,
-  Loader
+  Loader,
+  TextArea
 } from 'semantic-ui-react'
 
 import { createTodo, deleteTodo, getTodos, patchTodo } from '../api/todos-api'
@@ -29,70 +30,16 @@ interface TodosState {
   loadingTodos: boolean
 }
 
-export class Todos extends React.PureComponent<TodosProps, TodosState> {
-  state: TodosState = {
-    todos: [],
-    newTodoName: '',
-    loadingTodos: true
-  }
+export const Todos = (props: TodosProps) => {
+  useEffect(() => {
+    fetchTodos()
+  }, [props])
 
-  handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({ newTodoName: event.target.value })
-  }
-
-  onEditButtonClick = (todoId: string) => {
-    this.props.history.push(`/todos/${todoId}/edit`)
-  }
-
-  onTodoCreate = async (event: React.ChangeEvent<HTMLButtonElement>) => {
+  const fetchTodos = async () => {
     try {
-      const dueDate = this.calculateDueDate()
-      const newTodo = await createTodo(this.props.auth.getIdToken(), {
-        name: this.state.newTodoName,
-        dueDate
-      })
-      this.setState({
-        todos: [...this.state.todos, newTodo],
-        newTodoName: ''
-      })
-    } catch {
-      alert('Todo creation failed')
-    }
-  }
-
-  onTodoDelete = async (todoId: string) => {
-    try {
-      await deleteTodo(this.props.auth.getIdToken(), todoId)
-      this.setState({
-        todos: this.state.todos.filter(todo => todo.todoId !== todoId)
-      })
-    } catch {
-      alert('Todo deletion failed')
-    }
-  }
-
-  onTodoCheck = async (pos: number) => {
-    try {
-      const todo = this.state.todos[pos]
-      await patchTodo(this.props.auth.getIdToken(), todo.todoId, {
-        name: todo.name,
-        dueDate: todo.dueDate,
-        done: !todo.done
-      })
-      this.setState({
-        todos: update(this.state.todos, {
-          [pos]: { done: { $set: !todo.done } }
-        })
-      })
-    } catch {
-      alert('Todo deletion failed')
-    }
-  }
-
-  async componentDidMount() {
-    try {
-      const todos = await getTodos(this.props.auth.getIdToken())
-      this.setState({
+      const todos = await getTodos(props.auth.getIdToken())
+      setState({
+        ...state,
         todos,
         loadingTodos: false
       })
@@ -101,19 +48,96 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
     }
   }
 
-  render() {
-    return (
-      <div>
-        <Header as="h1">TODOs</Header>
+  const [state, setState] = useState<TodosState>({
+    todos: [],
+    newTodoName: '',
+    loadingTodos: false
+  })
 
-        {this.renderCreateTodoInput()}
+  const [hoverTodo, setHoverTodo] = useState<String | undefined>(undefined)
+  const [todoObj, setTodoObj] = useState<any>({})
+  const [updateObj, setUpdateObj] = useState<any>()
 
-        {this.renderTodos()}
-      </div>
-    )
+  useEffect(() => {
+    if (!updateObj) return
+    const timer = setTimeout(async () => {
+      debounceUpdateTodo(updateObj)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [updateObj])
+
+  useEffect(() => {
+    if (state.todos?.length) {
+      const todoArrToObj = {} as any
+      state.todos.forEach((t) => {
+        todoArrToObj[t.todoId] = t
+      })
+      setTodoObj(todoArrToObj)
+    }
+  }, [state.todos])
+
+  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setState({ ...state, newTodoName: event.target.value })
   }
 
-  renderCreateTodoInput() {
+  const onEditButtonClick = (todoId: string) => {
+    props.history.push(`/todos/${todoId}/edit`)
+  }
+
+  const onTodoCreate = async (event: React.ChangeEvent<HTMLButtonElement>) => {
+    try {
+      const dueDate = calculateDueDate()
+      const newTodo = await createTodo(props.auth.getIdToken(), {
+        name: state.newTodoName,
+        dueDate
+      })
+      setState({
+        ...state,
+        todos: [...state.todos, newTodo],
+        newTodoName: ''
+      })
+    } catch {
+      alert('Todo creation failed')
+    }
+  }
+
+  const onTodoDelete = async (todoId: string) => {
+    try {
+      await deleteTodo(props.auth.getIdToken(), todoId)
+      setState({
+        ...state,
+        todos: state.todos.filter((todo) => todo.todoId !== todoId)
+      })
+    } catch {
+      alert('Todo deletion failed')
+    }
+  }
+
+  const onTodoCheck = async (pos: number) => {
+    try {
+      const todo = state.todos[pos]
+      await patchTodo(props.auth.getIdToken(), todo.todoId, {
+        name: todo.name,
+        dueDate: todo.dueDate,
+        done: !todo.done
+      })
+      setState({
+        ...state,
+        todos: update(state.todos, {
+          [pos]: { done: { $set: !todo.done } }
+        })
+      })
+    } catch {
+      alert('Todo deletion failed')
+    }
+  }
+  const calculateDueDate = (): string => {
+    const date = new Date()
+    date.setDate(date.getDate() + 7)
+
+    return dateFormat(date, 'yyyy-mm-dd') as string
+  }
+  const renderCreateTodoInput = () => {
     return (
       <Grid.Row>
         <Grid.Column width={16}>
@@ -123,12 +147,12 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
               labelPosition: 'left',
               icon: 'add',
               content: 'New task',
-              onClick: this.onTodoCreate
+              onClick: onTodoCreate
             }}
             fluid
             actionPosition="left"
             placeholder="To change the world..."
-            onChange={this.handleNameChange}
+            onChange={handleNameChange}
           />
         </Grid.Column>
         <Grid.Column width={16}>
@@ -137,16 +161,15 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
       </Grid.Row>
     )
   }
-
-  renderTodos() {
-    if (this.state.loadingTodos) {
-      return this.renderLoading()
+  const renderTodos = () => {
+    if (state.loadingTodos) {
+      return renderLoading()
     }
 
-    return this.renderTodosList()
+    return renderTodosList()
   }
 
-  renderLoading() {
+  const renderLoading = () => {
     return (
       <Grid.Row>
         <Loader indeterminate active inline="centered">
@@ -156,20 +179,71 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
     )
   }
 
-  renderTodosList() {
+  const onChangeValue = (data: { value: string; id: string; key: string }) => {
+    const { value, id, key } = data
+    const todo = { ...todoObj[id] }
+    if (!todo) return
+    todo[key] = value
+    const newTodoObj = { ...todoObj, [id]: todo }
+    setTodoObj(newTodoObj)
+    setUpdateObj(todo)
+  }
+
+  const debounceUpdateTodo = useCallback(async (todo: any) => {
+    await patchTodo(props.auth.getIdToken(), todo.todoId, {
+      name: todo.name,
+      dueDate: todo.dueDate,
+      done: todo.done,
+      note: todo.note
+    })
+  }, [])
+  const onBlurTodo = (id: string) => {
+    setHoverTodo('')
+
+    const todos = state.todos.map((t) => {
+      if (t.todoId === id && todoObj[id]) {
+        t.name = todoObj[id].name
+      }
+      return t
+    })
+    setState({ ...state, todos })
+  }
+
+  const renderTodosList = () => {
     return (
       <Grid padded>
-        {this.state.todos.map((todo, pos) => {
+        {state.todos.map((todo, pos) => {
           return (
             <Grid.Row key={todo.todoId}>
               <Grid.Column width={1} verticalAlign="middle">
                 <Checkbox
-                  onChange={() => this.onTodoCheck(pos)}
+                  onChange={() => onTodoCheck(pos)}
                   checked={todo.done}
                 />
               </Grid.Column>
               <Grid.Column width={10} verticalAlign="middle">
-                {todo.name}
+                <div
+                  onMouseEnter={() => {
+                    setHoverTodo(todo.todoId)
+                  }}
+                  onMouseLeave={() => onBlurTodo(todo.todoId)}
+                >
+                  {hoverTodo === todo.todoId || !todoObj[todo.todoId]?.name ? (
+                    <MyInput
+                      error={
+                        !todoObj[todo.todoId]?.name
+                          ? "Please enter todo's name"
+                          : ''
+                      }
+                      onChange={(value: string) => {
+                        onChangeValue({ value, id: todo.todoId, key: 'name' })
+                      }}
+                      defaultValue={todoObj[todo.todoId]?.name}
+                    />
+                  ) : (
+                    todoObj[todo.todoId]?.name || todo.name
+                  )}
+                </div>
               </Grid.Column>
               <Grid.Column width={3} floated="right">
                 {todo.dueDate}
@@ -178,7 +252,7 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
                 <Button
                   icon
                   color="blue"
-                  onClick={() => this.onEditButtonClick(todo.todoId)}
+                  onClick={() => onEditButtonClick(todo.todoId)}
                 >
                   <Icon name="pencil" />
                 </Button>
@@ -187,14 +261,20 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
                 <Button
                   icon
                   color="red"
-                  onClick={() => this.onTodoDelete(todo.todoId)}
+                  onClick={() => onTodoDelete(todo.todoId)}
                 >
                   <Icon name="delete" />
                 </Button>
               </Grid.Column>
-              {todo.attachmentUrl && (
+              {!!todo.attachmentUrl && (
                 <Image src={todo.attachmentUrl} size="small" wrapped />
               )}
+              <MyTextArea
+                defaultValue={todo.note}
+                onChange={(value: string) =>
+                  onChangeValue({ value, id: todo.todoId, key: 'note' })
+                }
+              />
               <Grid.Column width={16}>
                 <Divider />
               </Grid.Column>
@@ -204,11 +284,48 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
       </Grid>
     )
   }
+  return (
+    <div>
+      <Header as="h1">TODOs</Header>
 
-  calculateDueDate(): string {
-    const date = new Date()
-    date.setDate(date.getDate() + 7)
+      {renderCreateTodoInput()}
 
-    return dateFormat(date, 'yyyy-mm-dd') as string
-  }
+      {renderTodos()}
+    </div>
+  )
+}
+
+export const MyInput = (props: {
+  onChange?: Function
+  defaultValue?: string
+  error?: string
+}) => {
+  return (
+    <div>
+      <Input
+        error={!!props.error}
+        placehoder="enter your todo name here..."
+        onChange={(e) => props.onChange && props.onChange(e.target.value)}
+        defaultValue={props.defaultValue}
+      />
+      {props.error && <>{props.error}</>}
+    </div>
+  )
+}
+
+export const MyTextArea = (props: {
+  onChange?: Function
+  defaultValue?: string
+  rows?: number
+}) => {
+  return (
+    <div style={{ marginTop: '20px' }}>
+      <TextArea
+        onChange={(e) => props.onChange && props.onChange(e.target.value)}
+        rows={props.rows || 3}
+        defaultValue={props.defaultValue || ''}
+        placeholder="enter your content"
+      />
+    </div>
+  )
 }
