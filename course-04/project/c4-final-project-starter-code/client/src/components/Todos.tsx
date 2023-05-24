@@ -15,7 +15,13 @@ import {
   TextArea
 } from 'semantic-ui-react'
 
-import { createTodo, deleteTodo, getTodos, patchTodo } from '../api/todos-api'
+import {
+  createTodo,
+  deleteTodo,
+  getTodos,
+  patchTodo,
+  patchTodoNote
+} from '../api/todos-api'
 import Auth from '../auth/Auth'
 import { Todo } from '../types/Todo'
 
@@ -57,6 +63,7 @@ export const Todos = (props: TodosProps) => {
   const [hoverTodo, setHoverTodo] = useState<String | undefined>(undefined)
   const [todoObj, setTodoObj] = useState<any>({})
   const [updateObj, setUpdateObj] = useState<any>()
+  const [noteUpdate, setNoteUpdate] = useState<string | null>(null)
 
   useEffect(() => {
     if (!updateObj) return
@@ -65,6 +72,14 @@ export const Todos = (props: TodosProps) => {
     }, 1500)
     return () => clearTimeout(timer)
   }, [updateObj])
+
+  useEffect(() => {
+    if (noteUpdate == null) return
+    const timer = setTimeout(async () => {
+      debounceUpdateTodoNote(noteUpdate)
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [noteUpdate])
 
   useEffect(() => {
     if (state.todos?.length) {
@@ -189,6 +204,14 @@ export const Todos = (props: TodosProps) => {
     setUpdateObj(todo)
   }
 
+  const onChangeNote = (value: string, id: string) => {
+    const todo = { ...todoObj[id] }
+    todo['note'] = value
+    const newTodoObj = { ...todoObj, [id]: todo }
+    setTodoObj(newTodoObj)
+    setNoteUpdate(value)
+  }
+
   const debounceUpdateTodo = useCallback(async (todo: any) => {
     await patchTodo(props.auth.getIdToken(), todo.todoId, {
       name: todo.name,
@@ -197,6 +220,11 @@ export const Todos = (props: TodosProps) => {
       note: todo.note
     })
   }, [])
+
+  const debounceUpdateTodoNote = useCallback(async (todo: any) => {
+    await patchTodoNote(props.auth.getIdToken(), todo.todoId, todo.note || '')
+  }, [])
+
   const onBlurTodo = (id: string) => {
     setHoverTodo('')
 
@@ -271,9 +299,7 @@ export const Todos = (props: TodosProps) => {
               )}
               <MyTextArea
                 defaultValue={todo.note}
-                onChange={(value: string) =>
-                  onChangeValue({ value, id: todo.todoId, key: 'note' })
-                }
+                onChange={(value: string) => onChangeNote(value, todo.todoId)}
               />
               <Grid.Column width={16}>
                 <Divider />

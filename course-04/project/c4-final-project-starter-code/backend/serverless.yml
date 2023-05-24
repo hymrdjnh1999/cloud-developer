@@ -57,6 +57,9 @@ custom:
       - name: UpdateTodoModel
         contentType: application/json
         schema: ${file(models/update-todo-model.json)}
+      - name: UpdateTodoNoteModel
+        contentType: application/json
+        schema: ${file(models/update-todo-note-model.json)}
 
 functions:
 
@@ -111,6 +114,27 @@ functions:
             description: Update a todo item
             requestModels:
               'application/json': UpdateTodoModel
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+
+  UpdateTodoNote:
+    handler: src/lambda/http/updateTodoNote.handler
+    events:
+      - http:
+          method: patch
+          path: todos/{todoId}/note
+          cors: true
+          authorizer: Auth
+          reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Update todo note
+            description: Update todo note
+            requestModels:
+              'application/json': UpdateTodoNoteModel
     iamRoleStatements:
       - Effect: Allow
         Action:

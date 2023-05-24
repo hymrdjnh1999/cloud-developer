@@ -12,7 +12,7 @@ const logger = createLogger('TodosAccess')
 export class TodosAccess {
   constructor(
     private readonly docClient: DocumentClient = new XAWS.DynamoDB.DocumentClient(),
-    private readonly todosTable = process.env.TODOS_TABLE,
+    private readonly todosTable = process.env.TODOS_TABLE
   ) {}
 
   async getTodos(userId: string): Promise<TodoItem[]> {
@@ -76,12 +76,13 @@ export class TodosAccess {
           todoId,
           userId
         },
-        UpdateExpression: 'set #name = :name, dueDate = :dueDate, done = :done, note = :note',
+        UpdateExpression:
+          'set #name = :name, dueDate = :dueDate, done = :done, note = :note',
         ExpressionAttributeValues: {
           ':name': todoUpdate.name,
           ':dueDate': todoUpdate.dueDate,
           ':done': todoUpdate.done,
-          ':note': todoUpdate.note || ""
+          ':note': todoUpdate.note || ''
         },
         ExpressionAttributeNames: {
           '#name': 'name'
@@ -123,5 +124,22 @@ export class TodosAccess {
         }
       })
       .promise()
+  }
+  async updateTodoNote(
+    todoId: string,
+    userId: string,
+    note: string
+  ): Promise<void> {
+    await this.docClient.update({
+      TableName: this.todosTable,
+      Key: {
+        todoId,
+        userId
+      },
+      UpdateExpression: 'set note=:note',
+      ExpressionAttributeValues: {
+        ':note': note
+      }
+    })
   }
 }
