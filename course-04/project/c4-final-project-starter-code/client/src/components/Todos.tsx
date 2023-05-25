@@ -349,7 +349,7 @@ export const MyTextArea = (props: {
   rows?: number
 }) => {
   return (
-    <div style={{ marginTop: '20px' }}>
+    <div style={{ marginTop: '20px', marginLeft: '30px' }}>
       <TextArea
         onChange={(e) => props.onChange && props.onChange(e.target.value)}
         rows={props.rows || 3}
